@@ -28,8 +28,6 @@ use Dist::Zilla::Plugin::PodWeaver;
 use Dist::Zilla::Plugin::PortabilityTests;
 use Dist::Zilla::Plugin::Prepender;
 use Dist::Zilla::Plugin::ReadmeFromPod;
-use Dist::Zilla::Plugin::SynopsisTests;
-use Dist::Zilla::Plugin::UploadToCPAN;
 
 sub bundle_config {
     my ( $self, $section ) = @_;
@@ -76,8 +74,6 @@ sub bundle_config {
         [ PortabilityTests    => {} ],
         [ Prepender           => {} ],
         [ ReadmeFromPod       => {} ],
-        [ SynopsisTests       => {} ],
-        [ UploadToCPAN        => {} ],
         [ Manifest            => {} ],   # should come last
     );
 
@@ -136,8 +132,6 @@ is equivalent to:
     [PortabilityTests]
     [Prepender]
     [ReadmeFromPod]
-    [SynopsisTests]
-    [UploadToCPAN]
     [Manifest]
 
 You can specify the following options
