@@ -2,6 +2,8 @@ Revision history for {{$dist->name}}
 
 {{$NEXT}}
 
+    Removed Repository plugin, which appears to cause problems in dzil v4
+
 1.101060  2010-04-16 17:29:47 EST5EDT
 	Removed duplicate UploadToCPAN (already in classic bundle)
 	Removed SynopsisTests (was annoying me)

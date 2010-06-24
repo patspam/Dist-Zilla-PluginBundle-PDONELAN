@@ -19,7 +19,6 @@ use Dist::Zilla::Plugin::HasVersionTests;
 use Dist::Zilla::Plugin::ManifestSkip;
 use Dist::Zilla::Plugin::MetaTests;
 use Dist::Zilla::Plugin::MetaJSON;
-use Dist::Zilla::Plugin::Repository;
 use Dist::Zilla::Plugin::MetaResources;
 use Dist::Zilla::Plugin::MinimumVersionTests;
 use Dist::Zilla::Plugin::ModuleBuild;
@@ -64,7 +63,6 @@ sub bundle_config {
         [ HasVersionTests     => {} ],
         [ MetaTests           => {} ],
         [ MetaJSON            => {} ],
-        [ Repository          => {} ],
         [ ManifestSkip        => {} ],
         [ MetaResources       => \%meta_resources ],
         [ MinimumVersionTests => {} ],
@@ -123,7 +121,6 @@ is equivalent to:
     [ManifestSkip]
     [MetaTests]
     [MetaJSON]
-    [Repository]
     [MetaResources]
     [MinimumVersionTests]
     [ModuleBuild]
