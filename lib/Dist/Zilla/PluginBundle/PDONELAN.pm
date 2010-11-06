@@ -1,147 +1,117 @@
 package Dist::Zilla::PluginBundle::PDONELAN;
 
-# ABSTRACT: Dist::Zilla plugin bundle for PDONELAN
+# ABSTRACT: Dist::Zilla pre-wired for PDONELAN
+
+=head1 DESCRIPTION
+
+This is a Dist::Zilla plugin bundle.
+
+Please see the (nicely commented) source code to see which plugins
+this module bundles - I already have to list them twice in the source
+just to make this work - three times would drive me nuts.
+
+=cut
 
 use Moose;
-use Moose::Autobox;
-with 'Dist::Zilla::Role::PluginBundle';
+with 'Dist::Zilla::Role::PluginBundle::Easy';
 
-use Dist::Zilla::PluginBundle::Filter;
-use Dist::Zilla::PluginBundle::Classic;
+# Explicitly list other PluginBundles as dependencies
+use Dist::Zilla::PluginBundle::Basic;
 use Dist::Zilla::PluginBundle::Git;
-use Dist::Zilla::Plugin::AutoPrereq;
-use Dist::Zilla::Plugin::AutoVersion;
-use Dist::Zilla::Plugin::CheckChangeLog;
-use Dist::Zilla::Plugin::CheckChangesTests;
-use Dist::Zilla::Plugin::CompileTests;
-use Dist::Zilla::Plugin::DistManifestTests;
-use Dist::Zilla::Plugin::HasVersionTests;
-use Dist::Zilla::Plugin::ManifestSkip;
-use Dist::Zilla::Plugin::MetaTests;
+
+# Explicitly list out all plugins not covered by the above PluginBundles as dependencies
 use Dist::Zilla::Plugin::MetaJSON;
-use Dist::Zilla::Plugin::MetaResources;
-use Dist::Zilla::Plugin::MinimumVersionTests;
-use Dist::Zilla::Plugin::ModuleBuild;
-use Dist::Zilla::Plugin::NextRelease;
-use Dist::Zilla::Plugin::PodWeaver;
-use Dist::Zilla::Plugin::PortabilityTests;
-use Dist::Zilla::Plugin::Prepender;
 use Dist::Zilla::Plugin::ReadmeFromPod;
+use Dist::Zilla::Plugin::EOLTests;
+use Dist::Zilla::Plugin::PodCoverageTests;
+use Dist::Zilla::Plugin::PodSyntaxTests;
+use Dist::Zilla::Plugin::PortabilityTests;
+use Dist::Zilla::Plugin::CompileTests;
+use Dist::Zilla::Plugin::PkgVersion;
+use Dist::Zilla::Plugin::PodWeaver;
+use Dist::Zilla::Plugin::NextRelease;
+use Dist::Zilla::Plugin::AutoPrereqs;
+use Dist::Zilla::Plugin::MinimumPerl;
+use Dist::Zilla::Plugin::Git::NextVersion;
+use Dist::Zilla::Plugin::GithubMeta;
+use Dist::Zilla::Plugin::MetaConfig;
+use Dist::Zilla::Plugin::CheckChangeLog;
+use Dist::Zilla::Plugin::CheckChangesHasContent;
+use Dist::Zilla::Plugin::UpdateGitHub;
 
-sub bundle_config {
-    my ( $self, $section ) = @_;
-    my $class = ( ref $self ) || $self;
+=method configure
 
-    my $arg = $section->{payload};
+Adds the list of plugins (and bundles) in order
 
-    my @plugins = Dist::Zilla::PluginBundle::Filter->bundle_config(
-        {   name    => "$class/Classic",
-            payload => {
-                bundle => '@Classic',
-                remove => [qw(PodVersion Readme Manifest)],
-            }
-        }
+=cut
+
+sub configure {
+    my ($self) = @_;
+
+    # Plugins are listed in terms of dzil phases
+    # See: L<Dist::Zilla::Dist::Builder::build_in>
+
+    # All non-bundle plugins listed should also have a corresponding
+    # "use Dist::Zilla::Plugin::X" line for dependency resolution
+
+    $self->add_bundle('Git');    # @RJBS
+    $self->add_plugins(
+
+        # FileGatherer
+        'GatherDir',             # @Basic
+        'MetaYAML',              # @Basic
+        'ExecDir',               # @Basic
+        'ShareDir',              # @Basic
+        'License',               # @Basic
+        'MetaJSON',              # @RJBS
+        'ReadmeFromPod',         # @AVAR
+        'EOLTests',              # @FLORA
+        'PodCoverageTests',      # @FLORA
+        'PodSyntaxTests',        # @RJBS
+        'PortabilityTests',      # @DAGOLDEN
+        'CompileTests',          # @MARCEL
+        'Manifest',              # @Basic    This one wants to come last
+
+        # FilePruner
+        'PruneCruft',            # @Basic
+        'ManifestSkip',          # @Basic
+
+        # FileMunger
+        'ExtraTests',            # @Basic
+        'PkgVersion',            # @RJBS
+        'PodWeaver',             # @RJBS
+        'NextRelease',           # @RJBS
+
+        # PrereqSource
+        'AutoPrereqs',           # @RJBS
+        'MinimumPerl',           # @DAGOLDEN
+
+        # MetaProvider
+        'Git::NextVersion',      # V=1.000 dzil release, dzil release --trial
+        'GithubMeta',            # repository.{url, web, type}, homepage instead of 'MetaResources' or 'Repository'
+        [
+            Bugtracker =>        # bugtracker.{web, mailto} instead of 'MetaResources'
+              { web => 'http://github.com/pdonelan/%s/issues' }
+        ],
+
+        'MetaConfig',            # @RJBS
+
+        # InstallTool
+        'MakeMaker',             # @Basic
+        'CheckChangeLog',        # @MARCEL
+
+        # BeforeRelease
+        'CheckChangesHasContent',    # @DAGOLDEN
+        'TestRelease',               # @Basic
+        'ConfirmRelease',            # @Basic
+
+        # Releaser
+        'UploadToCPAN',              # @Basic
+        'UpdateGitHub',              # @ROKR
     );
-
-    # params for AutoVersion
-    my $major_version = defined $arg->{major_version} ? $arg->{major_version} : 1;
-
-    my %meta_resources;
-    for my $resource qw(homepage bugtracker repository license ratings) {
-        $meta_resources{$resource} = $arg->{$resource} if defined $arg->{$resource};
-    }
-
-    # params
-
-    my $prefix = 'Dist::Zilla::Plugin::';
-    my @extra = map { [ "$class/$prefix$_->[0]" => "$prefix$_->[0]" => $_->[1] ] } (
-        [ AutoPrereq          => { skip  => $arg->{auto_prereq_skip} } ],
-        [ AutoVersion         => { major => $major_version } ],
-        [ CheckChangeLog      => {} ],
-        [ CheckChangesTests   => {} ],
-        [ CompileTests        => {} ],
-        [ HasVersionTests     => {} ],
-        [ MetaTests           => {} ],
-        [ MetaJSON            => {} ],
-        [ ManifestSkip        => {} ],
-        [ MetaResources       => \%meta_resources ],
-        [ MinimumVersionTests => {} ],
-        [ ModuleBuild         => {} ],
-        [ NextRelease         => {} ],
-        [ PodWeaver           => {} ],
-        [ PortabilityTests    => {} ],
-        [ Prepender           => {} ],
-        [ ReadmeFromPod       => {} ],
-        [ Manifest            => {} ],   # should come last
-    );
-
-    push @plugins, @extra;
-
-    # add git plugins
-    push @plugins,
-        Dist::Zilla::PluginBundle::Git->bundle_config(
-        {   name    => "$section->{name}/Git",
-            payload => {},
-        }
-        );
-
-    eval "require $_->[1]; 1;" or die for @plugins;    ## no critic Carp
-
-    return @plugins;
 }
 
 __PACKAGE__->meta->make_immutable;
 no Moose;
 
 1;
-__END__
-
-=head1 DESCRIPTION
-
-Putting the following in your dist.ini file:
-
-    [@PDONELAN]
-
-is equivalent to:
-
-    [@Filter]
-    bundle = @Classic
-    remove = PodVersion
-    remove = Readme
-    remove = Manifest
-      
-    [AutoPrereq]
-    [AutoVersion]
-    [CheckChangeLog]
-    [CheckChangesTests]
-    [CompileTests]
-    [DistManifestTests]
-    [@Git]
-    [HasVersionTests]
-    [ManifestSkip]
-    [MetaTests]
-    [MetaJSON]
-    [MetaResources]
-    [MinimumVersionTests]
-    [ModuleBuild]
-    [NextRelease]
-    [PodWeaver]
-    [PortabilityTests]
-    [Prepender]
-    [ReadmeFromPod]
-    [Manifest]
-
-You can specify the following options
-
-    major_version = X ;; passed to AutoVersion (defaults to 1)
-    auto_prereq_skip = ^Foo|Bar$
-    
-And also any of the following MetaResources
-
-    homepage 
-    bugtracker 
-    repository ;; only needed if you want to overwrite [Repository]'s value
-    license 
-    ratings
-
-=cut
