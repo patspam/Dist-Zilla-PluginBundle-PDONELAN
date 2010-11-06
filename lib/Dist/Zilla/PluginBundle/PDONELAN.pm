@@ -54,7 +54,6 @@ sub configure {
     # All non-bundle plugins listed should also have a corresponding
     # "use Dist::Zilla::Plugin::X" line for dependency resolution
 
-    $self->add_bundle('Git');    # @RJBS
     $self->add_plugins(
 
         # FileGatherer
@@ -109,6 +108,8 @@ sub configure {
         'UploadToCPAN',              # @Basic
         'UpdateGitHub',              # @ROKR
     );
+
+    $self->add_bundle('Git');    # @RJBS
 }
 
 __PACKAGE__->meta->make_immutable;
