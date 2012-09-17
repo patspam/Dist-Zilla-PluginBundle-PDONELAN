@@ -10,6 +10,21 @@ Please see the (nicely commented) source code to see which plugins
 this module bundles - I already have to list them twice in the source
 just to make this work - three times would drive me nuts.
 
+=head1 SYNOPSIS
+
+Use in your dist.ini as follows:
+
+ [@PDONELAN]
+
+If you want to customise something, use L<Dist::Zilla::PluginBundle::Filter>, for example:
+
+ [@Filter]
+ -bundle = @PDONELAN
+ -remove = AutoPrereqs
+
+ [AutoPrereqs]
+ skip = ^Wx::Panel$
+
 =cut
 
 use Moose;
